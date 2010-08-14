@@ -23,9 +23,9 @@ module OAuth
       end
       
       # use in a before_filter
-      def oauth_required
+      def require_oauth
         if oauthenticate
-          if authorized?
+          if current_token.authorized?
             return true
           else
             invalid_oauth_response
@@ -36,15 +36,15 @@ module OAuth
       end
       
       # This requies that you have an acts_as_authenticated compatible authentication plugin installed
-      def login_or_oauth_required
+      def require_user_or_oauth
         if oauthenticate
-          if authorized?
+          if current_token.authorized?
             return true
           else
             invalid_oauth_response
           end
         else
-          login_required
+          require_user
         end
       end
       

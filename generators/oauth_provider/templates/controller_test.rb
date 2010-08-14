@@ -165,9 +165,9 @@ class OauthControllerGetAccessTokenTest < ActionController::TestCase
 end
 
 class OauthorizedController < ApplicationController
-  before_filter :login_or_oauth_required,:only=>:both
-  before_filter :login_required,:only=>:interactive
-  before_filter :oauth_required,:only=>:token_only
+  before_filter :require_user_or_oauth,:only=>:both
+  before_filter :require_user,:only=>:interactive
+  before_filter :require_oauth,:only=>:token_only
     
   def interactive
     render :text => "interactive"
@@ -182,6 +182,11 @@ class OauthorizedController < ApplicationController
   end
 end
  
+ActionController::Routing::Routes.draw do |map|
+  map.interactive '/oauthorized/interactive', :controller => 'oauthorized', :action => 'interactive'
+  map.token_only '/oauthorized/token_only', :controller => 'oauthorized', :action => 'token_only'
+  map.both '/oauthorized/both', :controller => 'oauthorized', :action => 'both'
+end
 
 class OauthControllerAccessControlTest < ActionController::TestCase
   include OAuthControllerTestHelper
@@ -208,7 +213,7 @@ class OauthControllerAccessControlTest < ActionController::TestCase
     assert_nil @controller.send(:current_token)
   end
   
-  def test_should_allow_oauth_when_using_login_or_oauth_required
+  def test_should_allow_oauth_when_using_require_user_or_oauth
     setup_to_authorize_request
     sign_request_with_oauth(@access_token)
     ClientApplication.expects(:find_token).with(@access_token.token).returns(@access_token)
@@ -221,7 +226,7 @@ class OauthControllerAccessControlTest < ActionController::TestCase
     assert @response.success?
   end
 
-  def test_should_allow_interactive_when_using_login_or_oauth_required
+  def test_should_allow_interactive_when_using_require_user_or_oauth
     login
     get :both
     assert @response.success?
@@ -229,7 +234,7 @@ class OauthControllerAccessControlTest < ActionController::TestCase
     assert_nil @controller.send(:current_token)
   end
   
-  def test_should_allow_oauth_when_using_oauth_required
+  def test_should_allow_oauth_when_using_require_oauth
     setup_to_authorize_request
     sign_request_with_oauth(@access_token)
     ClientApplication.expects(:find_token).with(@access_token.token).returns(@access_token)
@@ -241,7 +246,7 @@ class OauthControllerAccessControlTest < ActionController::TestCase
     assert @response.success? 
   end
 
-  def test_should_disallow_oauth_using_request_token_when_using_oauth_required
+  def test_should_disallow_oauth_using_request_token_when_using_require_oauth
     setup_to_authorize_request
     ClientApplication.expects(:find_token).with(@request_token.token).returns(@request_token)
     sign_request_with_oauth(@request_token)
@@ -249,7 +254,7 @@ class OauthControllerAccessControlTest < ActionController::TestCase
     assert_equal '401', @response.code
   end
 
-  def test_should_disallow_interactive_when_using_oauth_required
+  def test_should_disallow_interactive_when_using_require_oauth
     login
     get :token_only
     assert_equal '401', @response.code
@@ -258,7 +263,7 @@ class OauthControllerAccessControlTest < ActionController::TestCase
     assert_nil @controller.send(:current_token)
   end
 
-  def test_should_disallow_oauth_when_using_login_required
+  def test_should_disallow_oauth_when_using_require_user
     setup_to_authorize_request
     sign_request_with_oauth(@access_token)
     get :interactive
@@ -267,7 +272,7 @@ class OauthControllerAccessControlTest < ActionController::TestCase
     assert_nil @controller.send(:current_token)
   end
 
-  def test_should_allow_interactive_when_using_login_required
+  def test_should_allow_interactive_when_using_require_user
     login
     get :interactive
     assert @response.success?

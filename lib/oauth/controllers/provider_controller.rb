@@ -4,9 +4,9 @@ module OAuth
     module ProviderController
       def self.included(controller)
         controller.class_eval do
-          before_filter :login_required, :only => [:authorize,:revoke]
-          before_filter :login_or_oauth_required, :only => [:test_request]
-          before_filter :oauth_required, :only => [:invalidate,:capabilities]
+          before_filter :require_user, :only => [:authorize,:revoke]
+          before_filter :require_user_or_oauth, :only => [:test_request]
+          before_filter :require_oauth, :only => [:invalidate,:capabilities]
           before_filter :verify_oauth_consumer_signature, :only => [:request_token]
           before_filter :verify_oauth_request_token, :only => [:access_token]
           skip_before_filter :verify_authenticity_token, :only=>[:request_token, :access_token, :invalidate, :test_request]
@@ -49,7 +49,12 @@ module OAuth
               if @token.oauth10?
                 @redirect_url = URI.parse(params[:oauth_callback] || @token.client_application.callback_url)
               else
-                @redirect_url = URI.parse(@token.oob? ? @token.client_application.callback_url : @token.callback_url)
+                begin
+                  @redirect_url = URI.parse(@token.oob? ? @token.client_application.callback_url : @token.callback_url)
+                rescue => e
+                  logger.error "Error while parsing callback url (#{e})"
+                  @redirect_url = ""
+                end
               end
               
               unless @redirect_url.to_s.blank?

@@ -233,16 +233,16 @@ I recommend that you think about what your users would want to provide access to
 
 If you want to give oauth access to everything a registered user can do, just replace the filter you have in your controllers with:
 
-  before_filter :login_or_oauth_required
+  before_filter :require_user_or_oauth
 
 If you want to restrict consumers to the index and show methods of your controller do the following:
 
-  before_filter :login_required,:except=>[:show,:index]
-  before_filter :login_or_oauth_required,:only=>[:show,:index]
+  before_filter :require_user,:except=>[:show,:index]
+  before_filter :require_user_or_oauth,:only=>[:show,:index]
 
 If you have an action you only want used via oauth:
 
-  before_filter :oauth_required
+  before_filter :require_oauth
 
 All of these places the tokens user in current_user as you would expect. It also exposes the following methods:
 

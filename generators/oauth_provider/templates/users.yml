@@ -1,0 +1,10 @@
+# Read about fixtures at http://ar.rubyonrails.org/classes/Fixtures.html
+
+quentin:
+  name: quentin
+  login: quentin
+  email: quentin@example.com
+  
+  persistence_token: xxx
+  single_access_token: xxx
+  perishable_token: xxx

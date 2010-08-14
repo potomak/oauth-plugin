@@ -229,9 +229,9 @@ describe OauthController, "getting an access token" do
 end
 
 class OauthorizedController<ApplicationController
-  before_filter :login_or_oauth_required, :only => :both
-  before_filter :login_required, :only => :interactive
-  before_filter :oauth_required, :only => :token_only
+  before_filter :require_user_or_oauth, :only => :both
+  before_filter :require_user, :only => :interactive
+  before_filter :require_oauth, :only => :token_only
   
   def interactive
   end
@@ -241,6 +241,12 @@ class OauthorizedController<ApplicationController
   
   def both
   end
+end
+
+ActionController::Routing::Routes.draw do |map|
+  map.interactive '/oauthorized/interactive', :controller => 'oauthorized', :action => 'interactive'
+  map.token_only '/oauthorized/token_only', :controller => 'oauthorized', :action => 'token_only'
+  map.both '/oauthorized/both', :controller => 'oauthorized', :action => 'both'
 end
 
 describe OauthorizedController, " access control" do
@@ -266,7 +272,7 @@ describe OauthorizedController, " access control" do
     controller.send(:current_token).should be_nil
   end
   
-  it "should allow oauth when using login_or_oauth_required" do
+  it "should allow oauth when using require_user_or_oauth" do
     setup_to_authorize_request
     sign_request_with_oauth(@access_token)
     ClientApplication.should_receive(:find_token).with(@access_token.token).and_return(@access_token)
@@ -279,7 +285,7 @@ describe OauthorizedController, " access control" do
     response.should be_success
   end
 
-  it "should allow interactive when using login_or_oauth_required" do
+  it "should allow interactive when using require_user_or_oauth" do
     login
     get :both
     response.should be_success
@@ -288,7 +294,7 @@ describe OauthorizedController, " access control" do
   end
 
   
-  it "should allow oauth when using oauth_required" do
+  it "should allow oauth when using require_oauth" do
     setup_to_authorize_request
     sign_request_with_oauth(@access_token)
     ClientApplication.should_receive(:find_token).with(@access_token.token).and_return(@access_token)
@@ -300,7 +306,7 @@ describe OauthorizedController, " access control" do
     response.should be_success 
   end
 
-  it "should disallow oauth using RequestToken when using oauth_required" do
+  it "should disallow oauth using RequestToken when using require_oauth" do
     setup_to_authorize_request
     ClientApplication.should_receive(:find_token).with(@request_token.token).and_return(@request_token)
     sign_request_with_oauth(@request_token)
@@ -308,7 +314,7 @@ describe OauthorizedController, " access control" do
     response.code.should == '401'
   end
 
-  it "should disallow interactive when using oauth_required" do
+  it "should disallow interactive when using require_oauth" do
     login
     get :token_only
     response.code.should == '401'
@@ -317,7 +323,7 @@ describe OauthorizedController, " access control" do
     controller.send(:current_token).should be_nil
   end
 
-  it "should disallow oauth when using login_required" do
+  it "should disallow oauth when using require_user" do
     setup_to_authorize_request
     sign_request_with_oauth(@access_token)
     get :interactive
@@ -326,7 +332,7 @@ describe OauthorizedController, " access control" do
     controller.send(:current_token).should be_nil
   end
 
-  it "should allow interactive when using login_required" do
+  it "should allow interactive when using require_user" do
     login
     get :interactive
     response.should be_success
