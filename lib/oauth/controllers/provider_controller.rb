@@ -49,6 +49,10 @@ module OAuth
               if @token.oauth10?
                 @redirect_url = URI.parse(params[:oauth_callback] || @token.client_application.callback_url)
               else
+                if @token.oob?
+                  @pin = @token.verifier
+                end
+                
                 begin
                   @redirect_url = URI.parse(@token.oob? ? @token.client_application.callback_url : @token.callback_url)
                 rescue => e
